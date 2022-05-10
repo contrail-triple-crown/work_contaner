@@ -1,0 +1,13 @@
+version: '3.2'
+services:
+  work:
+    restart: always
+    build:
+      context: .
+      args:
+        - NODE_VERSION=${NODE_VERSION}
+        - NPM_VERSION=${NPM_VERSION}
+    container_name: 'work_container'
+    tty: true
+    volumes:
+      - ~/.aws:/root/.aws
