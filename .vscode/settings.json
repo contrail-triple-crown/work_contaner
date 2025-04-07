@@ -1,0 +1,13 @@
+{
+    "vim.useSystemClipboard": true,
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "editor.fontFamily": "Source Han Code JP, Menlo, Monaco, 'Courier New', monospace",
+    "editor.fontSize": 12,
+    "editor.fontLigatures": true,
+    "editor.renderControlCharacters": true,
+    "editor.renderWhitespace": "all",
+    "files.autoGuessEncoding": true,
+    "files.encoding": "utf8"
+}
