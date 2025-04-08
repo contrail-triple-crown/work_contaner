@@ -82,8 +82,13 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /
     && rm -rf /var/lib/apt/lists/*
 
 # AWS CLI と CDK のインストール
-# 最新バージョンの AWS CLI をインストールし、CDK も追加
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+# アーキテクチャに応じて適切なAWS CLIをインストールし、CDKも追加
+RUN ARCH=$(uname -m) \
+    && if [ "$ARCH" = "aarch64" ]; then \
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"; \
+    else \
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"; \
+    fi \
     && unzip awscliv2.zip \
     && ./aws/install \
     && rm -rf aws awscliv2.zip \
