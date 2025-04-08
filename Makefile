@@ -4,6 +4,9 @@ RUNTIME_IMAGE := work_runtime:latest
 TOOLS_IMAGE := work_tools:latest
 DEV_IMAGE := work_dev:latest
 
+# .envファイルから変数を読み込む
+include .env
+
 # デフォルトのターゲット
 .PHONY: all
 all: build-dev
@@ -18,7 +21,12 @@ build-base:
 .PHONY: build-runtime
 build-runtime: build-base
 	@echo "Building runtime image..."
-	docker build -t $(RUNTIME_IMAGE) -f docker/runtime/Dockerfile .
+	docker build -t $(RUNTIME_IMAGE) \
+		--build-arg NODE_VERSION=$(NODE_VERSION) \
+		--build-arg NPM_VERSION=$(NPM_VERSION) \
+		--build-arg PYTHON_VERSION=$(PYTHON_VERSION) \
+		--build-arg RUST_VERSION=$(RUST_VERSION) \
+		-f docker/runtime/Dockerfile .
 
 # ツールイメージのビルド
 .PHONY: build-tools
@@ -36,7 +44,7 @@ build-dev: build-tools
 .PHONY: up
 up: build-dev
 	@echo "Starting development environment..."
-	docker-compose up -d
+	docker compose up -d
 
 # 開発環境の停止
 .PHONY: down
