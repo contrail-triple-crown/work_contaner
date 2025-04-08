@@ -4,6 +4,7 @@ services:
     restart: always
     build:
       context: .
+      dockerfile: docker/dev/Dockerfile
       args:
         - NODE_VERSION=${NODE_VERSION}
         - NPM_VERSION=${NPM_VERSION}

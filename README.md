@@ -1,44 +1,174 @@
+# 開発環境コンテナ
 
-# AWS作業コンテナ
+このプロジェクトは、開発環境をDockerコンテナとして提供するための構成です。
+マルチステージビルドを採用し、効率的なビルドと柔軟な開発環境の構築を実現します。
 
-## 概要
+## ディレクトリ構成
 
-このコンテナは私が個人の作業用に作ったもので、主な目的としては、AWS CDKを使いたいといったものになります。  
-AWS CLIを使用する為には、ホストのhomeに.awsディレクトリが必要です。  
-imageがpythonなのは元々pythonだけ使ってた名残ですが、今後個別にインストールするように修正するかもしれません。  
+```
+.
+├── docker/                # Dockerfile関連
+│   ├── base/             # ベースイメージ用
+│   ├── runtime/          # ランタイム環境用
+│   ├── tools/            # 開発ツール用
+│   └── dev/              # 開発パッケージ用
+├── scripts/              # インストールスクリプト
+├── docker-compose.yml    # コンテナ構成定義
+└── Makefile             # ビルド・管理用
+```
 
-# 速攻立ち上げる
+## 前提条件
 
-このコンテナを速攻で立ち上げる方法が以下になります。
+- Docker Engine 20.10.0以上
+- Docker Compose V2
+- Make
 
-## 事前準備
+## 環境変数
 
-- AWS CLI インストール
-  - configreの設定も済ませておく（.awsをコンテナでマウントしてる）
-- VScode
-- VScode 拡張機能：[Remote - Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+以下の環境変数を設定する必要があります：
 
-## 手順
+```bash
+# .env ファイルを作成
+NODE_VERSION=22.14.0
+NPM_VERSION=10.9.2
+PYTHON_VERSION=3.12
+RUST_VERSION=stable
+```
 
-cloneしたらディレクトリに移動してVSCodeを立ち上げてコマンドパレットを開き拡張機能のコマンドを使います。
+## ビルドと実行
 
-- クローン  
-`git clone https://github.com/contrail-triple-crown/work_contaner.git`  
-- ディレクトリ移動  
-`cd work_contaner`  
-- VScode起動  
-`code .`  
-- コマンドパレット開く  
-`Ctrl + Shift + p`  
-- 拡張機能のコマンドを叩く  
-`remote-containers: open Folder in container`
+### 基本的な使用方法
 
-# nodeについて
+1. 環境変数の設定
+```bash
+cp .env.example .env
+# .envファイルを編集して必要な値を設定
+```
 
-.envに環境変数を設定してます。  
+2. 開発環境の起動
+```bash
+make up
+```
 
-- NODE_VERSION
-- NPM_VERSION
+3. 開発環境の停止
+```bash
+make down
+```
 
-nodeのバージョン管理としてvoltaを使用してますので、デフォルトでインストールされるバージョンを設定しています。  
-.envの値を好きなバージョンに変更してお使いください。
+### 詳細なコマンド
+
+- `make build-base` - ベースイメージのビルド
+- `make build-runtime` - ランタイムイメージのビルド
+- `make build-tools` - ツールイメージのビルド
+- `make build-dev` - 開発環境イメージのビルド
+- `make up` - 開発環境の起動
+- `make down` - 開発環境の停止
+- `make clean` - イメージの削除
+- `make clean-all` - コンテナとイメージの完全な削除
+- `make help` - 利用可能なコマンドの一覧表示
+- `sh init.sh` - 各イメージのビルドから`make up`までを実行する
+
+## イメージの構成
+
+### 1. ベースイメージ (work_base:latest)
+- Ubuntu 22.04
+- 基本ツール（curl, git, vim等）
+- 日本語環境設定
+
+### 2. ランタイムイメージ (work_runtime:latest)
+- Python環境
+- Node.js環境
+- Rust環境
+
+### 3. ツールイメージ (work_tools:latest)
+- Docker CLI
+- AWS CLI
+- AWS CDK
+
+### 4. 開発環境イメージ (work_dev:latest)
+- 開発用パッケージ
+- プロジェクト固有のツール
+
+## ボリュームマウント
+
+以下のディレクトリがマウントされます：
+
+- `~/.aws` → `/root/.aws` - AWS認証情報
+- `/var/run/docker.sock` → `/var/run/docker.sock` - Dockerデーモン
+- `.` → `/workspace` - プロジェクトディレクトリ
+- `~` → `/root/host` - ホストのホームディレクトリ
+
+## 開発フロー
+
+1. 開発環境の起動
+```bash
+make up
+```
+
+2. コンテナへの接続
+```bash
+docker exec -it work_container bash
+```
+
+3. 開発作業
+- `/workspace` ディレクトリで作業
+- 必要なパッケージは `scripts/install_dev_packages.sh` に追加
+
+4. 開発環境の停止
+```bash
+make down
+```
+
+## トラブルシューティング
+
+### イメージの再ビルドが必要な場合
+
+```bash
+make clean-all
+make up
+```
+
+### 特定のイメージのみ再ビルド
+
+```bash
+make build-runtime
+make up
+```
+
+### ログの確認
+
+```bash
+docker-compose logs -f
+```
+
+## カスタマイズ
+
+### 新しいパッケージの追加
+
+1. `scripts/install_dev_packages.sh` を編集
+2. 開発環境を再ビルド
+```bash
+make build-dev
+make up
+```
+
+### 開発ツールの追加
+
+1. `scripts/install_tools.sh` を編集
+2. ツールイメージを再ビルド
+```bash
+make build-tools
+make up
+```
+
+## セキュリティ考慮事項
+
+- コンテナは特権モードで実行されます（`privileged: true`）
+- ホストのDockerソケットがマウントされます
+- AWS認証情報がマウントされます
+
+これらの設定は開発環境用であり、本番環境では適切なセキュリティ設定が必要です。
+
+## ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。
